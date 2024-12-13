@@ -21,8 +21,12 @@ jobs:
       - name: Upload Windows wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-windows
+          name: wheels-windows-${{ matrix.python-version }}
           path: target/wheels/*.whl
+          if-no-files-found: warn
+          compression-level: 6
+          overwrite: false
+          include-hidden-files: false
 
   build-wheels-macos:
     runs-on: macos-latest
@@ -36,7 +40,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Rust
         run: |
-          brew install rustup && rustup-init -y
+          brew install rustup
+          rustup-init -y
       - name: Install maturin
         run: pip install maturin
       - name: Build wheels (macOS)
@@ -44,5 +49,9 @@ jobs:
       - name: Upload macOS wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-macos
+          name: wheels-macos-${{ matrix.python-version }}
           path: target/wheels/*.whl
+          if-no-files-found: warn
+          compression-level: 6
+          overwrite: false
+          include-hidden-files: false
