@@ -15,7 +15,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          components: [rustfmt, clippy]
+          components: rustfmt, clippy
       - name: Install maturin
         run: pip install maturin
       - name: Build wheels (Linux)
