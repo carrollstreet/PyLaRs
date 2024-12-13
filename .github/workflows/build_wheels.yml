@@ -1,0 +1,74 @@
+name: Build Wheels
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build-wheels-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: [rustfmt, clippy]
+      - name: Install maturin
+        run: pip install maturin
+      - name: Build wheels (Linux)
+        run: maturin build --release
+      - name: Upload Linux wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels-linux
+          path: target/wheels/*.whl
+
+  build-wheels-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      # Установка Rust на Windows
+      - name: Install Rust
+        run: |
+          choco install rust -y
+      - name: Install maturin
+        run: pip install maturin
+      - name: Build wheels (Windows)
+        run: maturin build --release
+      - name: Upload Windows wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels-windows
+          path: target/wheels/*.whl
+
+  build-wheels-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      # Установка Rust на macOS (через Homebrew)
+      - name: Install Rust
+        run: brew install rustup && rustup-init -y
+      - name: Install maturin
+        run: pip install maturin
+      - name: Build wheels (macOS)
+        run: maturin build --release
+      - name: Upload macOS wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels-macos
+          path: target/wheels/*.whl
