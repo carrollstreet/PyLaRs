@@ -1,5 +1,5 @@
 [package]
-name = "permutation_test"
+name = "pylars"
 version = "0.1.0"
 edition = "2021"
 
