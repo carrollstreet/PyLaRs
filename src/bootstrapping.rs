@@ -60,8 +60,8 @@ pub fn bootstrap_vec(vec: Vec<f64>, n_resamples: u64) -> Vec<f64> {
 ///         - p_value (float): The p-value for the test (two-sided or one-sided depending on `two_sided`).
 ///         - mean_1 (float): The mean (or ratio) of the first dataset.
 ///         - mean_2 (float): The mean (or ratio) of the second dataset.
-///         - uplift (float): The observed difference in means or ratios (mean_2 - mean_1).
-///         - (float, float): The confidence interval bounds for the difference.
+///         - uplift (float): The observed difference uplift in means or ratios (mean_2 - mean_1) / mean_1.
+///         - (float, float): The confidence interval bounds for the uplift.
 /// """
 pub fn bootstrap(
     args: Vec<Vec<f64>>,
