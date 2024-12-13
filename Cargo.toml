@@ -1,0 +1,15 @@
+[package]
+name = "permutation_test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rand = "0.8.5"
+rand_distr = "0.4"
+rayon = "1.10.0"
+rand_xoshiro = "0.6.0"
+pyo3 = { version = "0.23.1", features = ["extension-module"] }
+
+[lib]
+name = "pylars"
+crate-type = ["cdylib"]
