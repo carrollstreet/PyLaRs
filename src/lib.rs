@@ -14,6 +14,7 @@ fn pylars(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(binom, m)?)?;
     m.add_function(wrap_pyfunction!(bootstrap_vec, m)?)?;
     m.add_function(wrap_pyfunction!(bootstrap, m)?)?;
+    m.add_function(wrap_pyfunction!(stratified_bootstrap, m)?)?;
     Ok(())
 }
 
