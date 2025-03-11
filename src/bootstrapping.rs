@@ -237,3 +237,111 @@ pub fn bootstrap(
         (q[0], q[1]),
     )
 }
+
+
+
+#[pyfunction(signature = (a_value, a_strat, b_value, b_strat, n_resamples = 10_000, confidence_level = 0.95, two_sided = true))]
+#[pyo3(text_signature = "(a_value, a_strat, b_value, b_strat, n_resamples=10000, confidence_level=0.95, two_sided=True)")]
+pub fn stratified_bootstrap(
+    a_value: Vec<f64>,
+    a_strat: Vec<String>,
+    b_value: Vec<f64>,
+    b_strat: Vec<String>,
+    n_resamples: u64,
+    confidence_level: f64,
+    two_sided: bool,
+) -> (f64, f64, f64, f64, (f64, f64))
+{
+    let left_q = (1.0 - confidence_level) / 2.0;
+    let right_q = 1.0 - left_q;
+
+    let mut a_groups: HashMap<String, Vec<f64>> = HashMap::new();
+    let mut b_groups: HashMap<String, Vec<f64>> = HashMap::new();
+
+    let a_len = a_value.len();
+    let b_len = b_value.len();
+
+    if a_len != a_strat.len() || b_len != b_strat.len() || a_len != b_len {
+        panic!("All arrays must have equal size")
+    }
+
+    for (value, category) in a_value.iter().zip(a_strat.iter()) {
+        a_groups
+            .entry(category.clone())
+            .or_default()
+            .push(*value);
+    }
+    for (value, category) in b_value.iter().zip(b_strat.iter()) {
+        b_groups
+            .entry(category.clone())
+            .or_default()
+            .push(*value);
+    }
+
+    let a_mean: f64 = a_groups
+        .par_iter()
+        .map(|(_, value)| value.iter().sum::<f64>() / a_len as f64)
+        .sum();
+    let b_mean: f64 = b_groups
+        .par_iter()
+        .map(|(_, value)| value.iter().sum::<f64>() / b_len as f64)
+        .sum();
+
+    let uplift = calculate_uplift(a_mean, b_mean);
+    let mut all_categories: Vec<_> = a_groups.keys().cloned().collect();
+    all_categories.sort();
+
+    let mut groups_dist = Vec::new();
+    for category in &all_categories {
+        let data = a_groups.get(category).map(Vec::as_slice).unwrap_or(&[]);
+        let len = data.len();
+        groups_dist.push((
+            category.clone(),
+            len,
+            rand::distributions::Uniform::new(0, len),
+        ));
+    }
+    let uplift_diffs: Vec<f64> = (0..n_resamples)
+        .into_par_iter()
+        .map(|i| {
+            let seed: u64 = i ^ i.wrapping_mul(0x9e3779b97f4a7c15);
+            let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+
+            let mut mean_a = 0.0;
+            let mut mean_b = 0.0;
+            for (category, len, dist) in &groups_dist {
+                let part_sum_a: f64 = (0..*len)
+                    .map(|_| unsafe {
+                        a_groups
+                            .get(category)
+                            .unwrap()
+                            .get_unchecked(dist.sample(&mut rng))
+                    })
+                    .sum();
+                let part_sum_b: f64 = (0..*len)
+                    .map(|_| unsafe {
+                        b_groups
+                            .get(category)
+                            .unwrap()
+                            .get_unchecked(dist.sample(&mut rng))
+                    })
+                    .sum();
+                mean_a += part_sum_a / a_len as f64;
+                mean_b += part_sum_b / b_len as f64;
+            }
+            calculate_uplift(mean_a, mean_b)
+        })
+        .collect();
+
+    let p: f64 =
+        (uplift_diffs.iter().filter(|&&i| i > 0.0).count() as f64 + 1.0) / (n_resamples + 1) as f64;
+    let p_value = (2.0 - 2.0 * p).min(p * 2.0);
+    let q = uplift_diffs.quantile(&[left_q, right_q]);
+    (
+        if two_sided { p_value } else { p },
+        a_mean,
+        b_mean,
+        uplift,
+        (q[0], q[1]),
+    )
+}
