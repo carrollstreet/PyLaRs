@@ -5,6 +5,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use rayon::prelude::*;
 use pyo3::prelude::*;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 
 #[pyfunction(signature = (vec, n_resamples = 10_000))]
 #[pyo3(text_signature = "(vec, n_resamples=10000)")]
